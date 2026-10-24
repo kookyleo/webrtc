@@ -576,6 +576,26 @@ impl Request {
         build_and_send(&self.conn, self.src_addr, msg).await
     }
 
+    async fn respond_allocate_error(
+        &self,
+        m: &Message,
+        code: ErrorCode,
+        integrity: MessageIntegrity,
+    ) -> Result<()> {
+        let response = build_msg(
+            m.transaction_id,
+            MessageType::new(METHOD_ALLOCATE, CLASS_ERROR_RESPONSE),
+            vec![
+                Box::new(ErrorCodeAttribute {
+                    code,
+                    reason: vec![],
+                }),
+                Box::new(integrity),
+            ],
+        )?;
+        build_and_send(&self.conn, self.src_addr, response).await
+    }
+
     pub(crate) async fn handle_refresh_request(&mut self, m: &Message) -> Result<()> {
         let Some((_, integrity)) = self.authenticate_request(m, METHOD_REFRESH).await? else {
             return Ok(());
